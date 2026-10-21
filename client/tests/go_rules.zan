@@ -1,0 +1,58 @@
+using System;
+using Game.Board;
+
+// 围棋规则断言（项目消费共享包的视角）：
+// 项目里黑 = 1 = 玩家，白 = 2 = AI，颜色口径必须与包一致。
+public class GoRulesCheck {
+    static void Main() {
+        // 提子：白(4,4) 被黑围住，黑下 (4,5) 提掉它
+        GoBoard b = new GoBoard(9);
+        b.Play(4, 4, 2);
+        b.Play(3, 4, 1);
+        b.Play(5, 4, 1);
+        b.Play(4, 3, 1);
+        int cap = b.Play(4, 5, 1);
+        if (cap != 1) { Console.WriteLine("FAIL capture=" + Convert.ToString(cap)); return; }
+        if (b.At(4, 4) != 0) { Console.WriteLine("FAIL cell"); return; }
+        if (b.CapturedByBlack != 1) { Console.WriteLine("FAIL byBlack"); return; }
+
+        // 自杀禁手：角上白(1,0)(0,1) 围点，黑下 (0,0) 必须被拒
+        GoBoard s = new GoBoard(9);
+        s.Play(1, 0, 2);
+        s.Play(0, 1, 2);
+        if (s.Play(0, 0, 1) != -1) { Console.WriteLine("FAIL suicide"); return; }
+        if (s.At(0, 0) != 0) { Console.WriteLine("FAIL suicideCell"); return; }
+
+        // 打劫：黑(2,1) 提单子后，白立刻回提被禁
+        GoBoard k = new GoBoard(9);
+        k.Play(1, 0, 1);
+        k.Play(2, 0, 2);
+        k.Play(0, 1, 1);
+        k.Play(3, 1, 2);
+        k.Play(1, 2, 1);
+        k.Play(2, 2, 2);
+        k.Play(1, 1, 2);
+        if (k.Play(2, 1, 1) != 1) { Console.WriteLine("FAIL koCapture"); return; }
+        if (k.KoPoint != 10) { Console.WriteLine("FAIL koPoint=" + Convert.ToString(k.KoPoint)); return; }
+        if (k.Play(1, 1, 2) != -1) { Console.WriteLine("FAIL koBlock"); return; }
+
+        // 数子：角上一黑一白，中間空区双方都临 = 争议不计（贴 7 目白胜）
+        GoBoard g = new GoBoard(9);
+        g.Play(0, 0, 1);
+        g.Play(8, 8, 2);
+        GoScore sc = g.Score(7.0);
+        if (sc.Black != 1 || sc.White != 1) {
+            Console.WriteLine("FAIL score=" + Convert.ToString(sc.Black) + "," + Convert.ToString(sc.White));
+            return;
+        }
+        if (sc.Winner() != 2) { Console.WriteLine("FAIL winner"); return; }
+
+        // 停手两次 = 终局
+        GoBoard o = new GoBoard(9);
+        o.Pass(1);
+        o.Pass(2);
+        if (!o.IsOverByPasses()) { Console.WriteLine("FAIL over"); return; }
+
+        Console.WriteLine("go_rules_OK");
+    }
+}

@@ -36,4 +36,15 @@ if ($proc.ExitCode -ne 0) { throw "无头冒烟失败：exit=$($proc.ExitCode)" 
 $log = Join-Path $uidir 'results.log'
 if (-not (Test-Path $log)) { throw 'UiDriver 会话没有产出 results.log' }
 if (-not (Select-String -Path $log -Pattern 'DONE' -Quiet)) { throw "UiDriver 会话未收尾：$log" }
+# 规则断言（无头）：直接用共享包 Game.Board.GoBoard 验证项目的颜色口径
+# 与规则语义（提子 / 自杀禁手 / 打劫 / 数子 / 停手终局）。
+$caseSources = @(Join-Path $project 'tests/go_rules.zan')
+$caseSources += @(Get-ChildItem (Join-Path $project 'src') -Recurse -File -Filter *.zan |
+    Where-Object { $_.Name -ne 'main.zan' } | Sort-Object FullName | ForEach-Object { $_.FullName })
+$caseExe = Join-Path $out 'go_rules.exe'
+& $Compiler $caseSources @('--auto-stdlib', '--package-project', $PackageProject, '-o', $caseExe)
+if ($LASTEXITCODE -ne 0) { throw "go_rules 用例编译失败" }
+$caseOut = & $caseExe
+if ($caseOut -notmatch 'go_rules_OK') { throw "go_rules 用例失败：$caseOut" }
+Write-Host 'go_rules_OK'
 Write-Host "weiqi_SMOKE_OK"

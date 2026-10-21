@@ -1,0 +1,44 @@
+using System;
+using System.Collections.Generic;
+using Game.Foundation;
+
+// 围棋设置：选项声明在共享基座 Game.Foundation 上（GameSettings 存盘、
+// 校验、坏文件回退；SettingsModel 把声明翻译成档位按钮）。
+// 这里只声明"围棋有哪些选项"与便捷读法——存盘与档位计算都在基座里。
+public class WqSettings {
+    static GameSettings store;
+
+    static string Path() { return "weiqi_settings.json"; }
+
+    static GameSettings Store() {
+        if (WqSettings.store == null) {
+            GameSettings s = new GameSettings().At(WqSettings.Path());
+            // AI 落子前的思考延迟：越短越干脆，越长越有"想棋"的感觉。
+            // 离散三档（快 / 适中 / 从容），面板上就是三个按钮。
+            s.AddIntChoice("aiDelayMs", "AI 思考延迟", 500,
+                new List<int> { 200, 500, 900 });
+            s.Load();
+            WqSettings.store = s;
+        }
+        return WqSettings.store;
+    }
+
+    // 启动时读一次配置。
+    public static void Ensure() { WqSettings.Store(); }
+
+    public static GameSettings Base() { return WqSettings.Store(); }
+
+    public static int AiDelayMs() { return WqSettings.Store().GetInt("aiDelayMs"); }
+
+    public static void SetAiDelayMs(int value) {
+        GameSettings s = WqSettings.Store();
+        s.SetInt("aiDelayMs", value);
+        s.Save();
+    }
+
+    public static void ResetAll() {
+        GameSettings s = WqSettings.Store();
+        s.Reset();
+        s.Save();
+    }
+}

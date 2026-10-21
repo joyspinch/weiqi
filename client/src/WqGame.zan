@@ -279,7 +279,8 @@ public class WqGame {
             return;
         }
         this.aiTurn = (c == 1);
-        if (this.aiTurn) { this.aiThinkAt = now + 350 + this.rng.Range(0, 450); }
+        // AI 思考延迟走设置（快 / 适中 / 从容三档），再叠一点随机更像人。
+        if (this.aiTurn) { this.aiThinkAt = now + WqSettings.AiDelayMs() + this.rng.Range(0, 450); }
     }
 
     void PlayerPass(int now) {
@@ -289,7 +290,7 @@ public class WqGame {
         this.Toast("你选择停一手", now);
         if (this.go.IsOverByPasses()) { this.EndByScore(now); return; }
         this.aiTurn = true;
-        this.aiThinkAt = now + 400;
+        this.aiThinkAt = now + WqSettings.AiDelayMs();
     }
 
     // ----- AI --------------------------------------------------------------

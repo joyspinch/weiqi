@@ -12,6 +12,9 @@ public class WqApp {
         router.Register("menu", new WqMenuScene(g));
         router.Register("play", new WqPlayScene(g));
         router.Register("over", new WqOverScene(g));
+        router.Register("settings", new WqSettingsScene(g));
+        // 设置读档一次（Game.Foundation.GameSettings 负责存盘与坏文件回退）。
+        WqSettings.Ensure();
         // demo 标记（weiqi_demo.txt）直接进对局自弈供截图/无头验证。
         router.Run(g.demo ? "play" : "menu");
     }

@@ -47,4 +47,26 @@ if ($LASTEXITCODE -ne 0) { throw "go_rules 用例编译失败" }
 $caseOut = & $caseExe
 if ($caseOut -notmatch 'go_rules_OK') { throw "go_rules 用例失败：$caseOut" }
 Write-Host 'go_rules_OK'
+
+# --- 设置用例：跑两遍验证真的落盘 ---
+# 首跑：默认值 500 -> 写入 900；次跑（新进程）：读回必须是 900，
+# 否则说明设置只活在内存里，重启就丢——那就不叫"有设置"。
+$settingsSources = @(Join-Path $project 'tests/settings.zan')
+$settingsSources += @(Get-ChildItem (Join-Path $project 'src') -Recurse -File -Filter *.zan |
+    Where-Object { $_.Name -ne 'main.zan' } | Sort-Object FullName | ForEach-Object { $_.FullName })
+$settingsExe = Join-Path $out 'settings.exe'
+& $Compiler $settingsSources @('--auto-stdlib', '--package-project', $PackageProject, '-o', $settingsExe)
+if ($LASTEXITCODE -ne 0) { throw "设置用例编译失败" }
+$settingsFile = Join-Path $out 'weiqi_settings.json'
+if (Test-Path $settingsFile) { Remove-Item $settingsFile -Force }
+Push-Location $out
+try {
+    $first = & $settingsExe 2>&1 | Out-String
+    $second = & $settingsExe 2>&1 | Out-String
+} finally { Pop-Location }
+if ($first -notmatch 'settings OK') { throw "设置用例首跑输出不对：`n$first" }
+if ($second -notmatch 'settings OK') { throw "设置用例次跑输出不对：`n$second" }
+if ($first -notmatch 'delay=500') { throw "设置默认值不对：`n$first" }
+if ($second -notmatch 'delay=900') { throw "设置没有落盘（次跑仍读到默认值）：`n$second" }
+Write-Host 'settings_OK'
 Write-Host "weiqi_SMOKE_OK"

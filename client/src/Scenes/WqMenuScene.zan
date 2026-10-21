@@ -16,6 +16,7 @@ public class WqMenuScene : HtmlScene {
         handlers.Add("drill1", () => this.Pick(1));
         handlers.Add("drill2", () => this.Pick(2));
         handlers.Add("drill3", () => this.Pick(3));
+        handlers.Add("settings", () => this.router.Go("settings"));
     }
 
     void Pick(int m) {
